@@ -1,0 +1,174 @@
+{% extends 'templates/base.html.twig' %}
+
+{% block content %}
+	<div class="row justify-content-end card-header py-3 ">
+		<a href="/agendamento" class="btn btn-primary btn-sm">
+			Voltar
+		</a>
+	</div>
+	<div class="row justify-content-center">
+		<div class="col-lg-8 ">
+			<div class="p-5">
+				<div class="text-center">
+					<h1 class="h4 text-gray-900 mb-4">{{ title }}</h1>
+				</div>
+				<form method="post" class="user center-block" action="{{ base_url('/agendamento/save') }}">
+                    {% if agendamento %}
+                    <input type="hidden" name="agendamento_id" id="agendamento_id" value="{{ agendamento.id }}">
+					{% endif %}
+                    <input type="hidden" name="paciente_id" id="paciente_id" value="{{ agendamento is defined ? agendamento.paciente_id : '' }}" required>
+
+                    <div class="form-group row">
+                        <div class="col-sm-6 mb-3 mb-sm-0">
+                            <input type="text" class="form-control" id="cpf"  name="cpf" placeholder="CPF" value="{{ agendamento is defined ? agendamento.cpf : '' }}" required>
+                        </div>
+                        
+                        <div class="col-sm-6 mb-3 mb-sm-0">
+                            <input type="text" class="form-control" id="nome" name="nome" placeholder="Nome" value="{{ agendamento is defined ? agendamento.NomePaciente : '' }}" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group row ">
+                        <div class="col-sm-6 mb-3 mb-sm-0">
+                            <input type="text" class="form-control" id="nome_mae" name="nome_mae"  placeholder="Nome da mãe" value="{{ agendamento is defined ? agendamento.nome_mae : ''}} " required>
+                        </div>
+                        <div class="col-sm-6 mb-3 mb-sm-0">
+							<input type="date" class="form-control" id="data_nascimento" name="data_nascimento"  value="{{ agendamento is defined ? agendamento.data_nascimento|date('Y-m-d') : '' }}" required>
+						</div>
+                    </div>
+
+                    <div class="form-group row ">
+                        <div class="col-sm-6 mb-3 mb-sm-0">
+							<input type="text" class="form-control" id="telefone" name="telefone" placeholder="Telefone" value="{{ agendamento is defined ? agendamento.telefone : '' }}" required>
+						</div>
+                    </div>
+
+					<div class="form-group row">
+						<div class="col-sm-6 mb-3 mb-sm-0">
+							<select class="custom-select" id="grupo_id" name="grupo_id" required>
+								<option value="" disabled selected>Selecionar Grupo</option>
+								{% for grupo in grupos %}
+									<option value="{{ grupo.id }}"{{ agendamento is defined and agendamento.grupo_id == grupo.id ? ' selected' : ''}}>{{ grupo.nome }}</option>
+								{% endfor %}
+							</select>
+						</div>
+
+                        <div class="col-sm-6 mb-3 mb-sm-0">
+							<select class="custom-select" id="agenda" name="agenda" required>
+								<option value="">Selecionar Agenda</option>
+                                {% for agenda in agendas %}
+                                    <option value="{{ agenda.id }}"{{ agendamento is defined and agendamento.agenda_id == agenda.id ? 'selected' : '' }}>{{ agenda.data_hora|date('d-m-Y H:i') }}</option>
+                                {% endfor %}
+							</select>
+						</div>
+					</div>
+					<div class="form-group row">
+						<div class="col-sm-12 mb-3 mb-sm-0">
+							<button class="btn btn-primary btn-user btn-block">Salvar</button>
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+{% endblock %}
+
+{% block vendor %}
+	<script src="{{ base_url('/assets/js/inputmask/jquery.inputmask.min.js') }}"></script>
+{% endblock %}
+
+{% block script %}
+	<script type="text/javascript">
+
+		var Page = function () {
+
+            var _components = function () {
+                $('#telefone').inputmask({
+                    mask: [
+                        "(99) 9999-9999", "(99) 99999-9999"
+                    ],
+                    keepStatic: true
+                });
+                $('#cpf').inputmask('999.999.999-99'); 
+            };
+
+            var _events = function() {
+                $('#cpf').blur(function(e){
+                    $('#nome').val('');
+                    var cpf = $(this).val()
+                    if (this.value) {
+                        $.ajax({
+                            url: '{{ base_url('paciente/get-by-cpf') }}',
+                            type: 'POST',
+                            dataType: 'json',
+                            data: { cpf: cpf},
+                        })
+                        .done(function(result) {
+                            console.log(result);
+                            $('#paciente_id').val(result.id);
+                            $('#nome').val(result.nome);
+                            $('#nome_mae').val(result.nome_mae);
+                            $('#data_nascimento').val(result.data_nascimento);
+                            $('#telefone').val(result.telefone);
+                        })
+                        .fail(function(e) {
+                            console.log(e);
+                        })
+                        .always(function() {
+                        });
+
+                    }
+                })
+            };
+
+            var _groups = function(){
+                $('#grupo_id').change(function(e){
+                    $('#agenda').empty();
+                    if (this.value) {
+                        $.ajax({
+                            url: '{{ base_url('/agenda/get-by-grupo-verification') }}/' + $(this).val(),
+                            type: 'GET',
+                            dataType: 'json',
+                        })
+                        .done(function(result){
+                            console.log(result);
+                            $('#agenda').append('<option value=""></option>');
+                            $.each(result, function(){
+                                $('#agenda').append($('<option />').val(this.id).text(this.data_hora));
+                            });
+                        })
+                        .fail(function(e){
+                            console.log(e);
+                        })
+                        .always(function(){
+
+                        });
+                    }
+                })
+            };
+
+
+            return {
+                init: function () {
+                    _components();
+                    _events();
+                    _groups();
+                }
+            }
+        }();
+
+        document.addEventListener('DOMContentLoaded', function () {
+            Page.init();
+        });
+
+        {% if session.error_notice %}
+			Swal.fire({
+				position: 'top-end',
+				icon: 'error',
+				title: '{{ session.error_notice }}',
+				showConfirmButton: false,
+				timer: 2000
+			})
+		{% endif %}		       
+	</script>
+{% endblock %}

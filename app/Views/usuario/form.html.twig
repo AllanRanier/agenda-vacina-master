@@ -1,0 +1,111 @@
+{% extends 'templates/base.html.twig' %}
+
+{% block content %}
+
+	<div class="row justify-content-end card-header py-3 ">
+		<a href="/usuario" class="btn btn-primary btn-sm">
+			Voltar
+		</a>
+	</div>
+	<div class="row justify-content-center">
+		<div class="col-lg-6 ">
+			<div class="p-5">
+				<div class="text-center">
+					<h1 class="h4 text-gray-900 mb-4">{{ title }}</h1>
+				</div>
+				<form method="post" class="user center-block" action="{{ base_url('/usuario/save') }}">
+					{% if usuario %}
+						<input type="hidden" name="id" value="{{ usuario.id }}"/>
+					{% endif %}
+					<div class="form-group row">
+						<div class="col-sm-12 mb-3 mb-sm-0">
+							<input type="text" class="form-control form-control-user" id="nome" name="nome" placeholder="Nome" value="{{ usuario is defined ? usuario.nome : ''}}" required>
+						</div>
+					</div>
+					<div class="form-group row">
+						<div class="col-sm-12 mb-3 mb-sm-0">
+							<input type="email" class="form-control form-control-user" id="email" name="email" placeholder="Email" value="{{ usuario is defined ? usuario.email : ''}}" required>
+							<span id="email_invalido" class="d-none text-danger">Email já cadastrado</span>
+							<span id="email_valido" class="d-none text-success">Email valido</span>
+						</div>
+					</div>
+
+					{% if usuario is defined %}
+						<div class="form-group row">
+							<div class="col-sm-12 mb-3 mb-sm-0">
+								<input type="password" class="form-control form-control-user" id="senha" name="senha" placeholder="Nova senha" >
+							</div>
+						</div>
+					{% else %}
+						<div class="form-group row">
+							<div class="col-sm-12 mb-3 mb-sm-0">
+								<input type="password" class="form-control form-control-user" id="senha" name="senha" placeholder="Senha">
+							</div>
+						</div>
+					{% endif %}
+
+					<div class="form-group row">
+						<div class="col-sm-12 mb-3 mb-sm-0">
+							<button class="btn btn-primary btn-user btn-block">Salvar</button>
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+{% endblock %}
+
+{% block script %}
+	<script type="text/javascript">
+
+		var Page = function () {
+
+			var _email = function (){
+				$('#email').blur(function(e){
+					var email = $(this).val()
+					if(this.value){
+						$.ajax({
+							url: '{{ base_url('usuario/get-by-email') }}',
+							type: 'POST',
+							dataType: 'json',
+							data: { email: email }
+						})
+						.done(function(result){
+							
+							if(result != null){
+								$('.btn-user').attr('disabled',true);
+								$('#email').addClass("is-invalid");
+								$('#email_valido').removeClass("d-block").addClass("d-none");
+								$('#email_invalido').removeClass("d-none").addClass("d-block");
+							}else{
+								$('.btn-user').attr('disabled',false);
+								$('#email').removeClass("is-invalid").addClass("is-valid");
+								$('#email_invalido').removeClass("d-block").addClass("d-none");
+								$('#email_valido').removeClass("d-none").addClass("d-block");
+							}
+						})
+						.fail(function(e){
+							console.log(e);
+						})
+					}
+					
+				})
+			};
+
+			{# function verificarEmail(){
+				if()
+			} #}
+
+			return {
+				init: function () {
+					_email();
+				}
+			}
+
+		}();
+
+		document.addEventListener("DOMContentLoaded", function () {
+			Page.init();
+		});
+	</script>
+{% endblock %}

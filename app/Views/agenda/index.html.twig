@@ -1,0 +1,136 @@
+{% extends 'templates/base.html.twig' %}
+
+{% block content %}
+
+	<div
+		class="container-fluid">
+
+		<!-- Page Heading -->
+		<h1 class="h3 mb-2 text-gray-800">{{title}}</h1>
+
+		<!-- DataTales Example -->
+
+		<div class="row justify-content-end card-header py-3 ">
+			<a href="/agenda/novo" class="btn btn-primary btn-sm">Nova Agenda</a>
+		</div>
+		<div class="card shadow mb-4">
+			<div class="card-header py-3">
+				<h6 class="m-0 font-weight-bold text-primary">Tabela de Agenda</h6>
+			</div>
+			<div class="card-body">
+				<div class="table-responsive">
+					<table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+						<thead>
+							<tr>
+								<th>Grupo</th>
+								<th>Data e Hora</th>
+								<th>Vagas</th>
+								<th>Ações</th>
+							</tr>
+						</thead>
+						<tbody>
+							{% for row in agenda %}
+								<tr>
+									<td>{{ row.grupo_nome }}</td>
+									<td>{{ row.data_hora|date('d/m/y') }} - {{ row.data_hora|date('H:i') }}</td>
+									<td>{{ row.vagas }}</td>
+									<td>
+										<a href="{{ base_url(baseRoute) }}/editar/{{ row.id }}" class="btn btn-info btn-circle btn-sm">
+											<i class="fas fa-user-edit"></i>
+										</a>
+										<a class="btn btn-danger btn-circle btn-sm" onclick="AlertaExcluir({{ row.id }});">
+											<i class="fas fa-trash"></i>
+										</a>
+										<a href="{{ base_url(baseRoute) }}/copiar/{{row.id}}" class="btn btn-success btn-circle btn-sm">
+											<i class="fas fa-copy"></i>
+										</a>
+									</td>
+								</tr>
+							{% endfor %}
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+
+	</div>
+	<!-- /.container-fluid -->
+
+{% endblock %}
+
+{% block script %}
+
+	<script src="{{ base_url('assets/vendor/datatables/jquery.dataTables.min.js')}}"></script>
+	<script src="{{ base_url('assets/vendor/datatables/dataTables.bootstrap4.min.js')}}"></script>
+
+	<script type="text/javascript">
+
+		function Excluir(id){
+			paramentros = {"id":id}
+			$.ajax({
+				data:paramentros,
+				url:'agenda/excluir/'+ id,
+				type:'POST',
+				beforeSend:function(){},
+				success:function(){
+					Swal.fire(
+					'Excluido!',
+					'Excluido Com Sucesso!.',
+					'success'
+					)
+				}
+			})
+		}
+
+		function AlertaExcluir(id){
+
+			paramentros = {"id": id}
+			$.ajax({
+				data: paramentros,
+				url: '{{ base_url('/agendamento/get-by-agenda_id') }}/' + id,
+				type: 'GET',
+				dataType: 'json',
+			}).done(function(result){
+				if(result == 0){
+					Swal.fire({
+						title: 'Deseja Excluir?',
+						text: "Você não poderá reverter isso!",
+						icon: 'warning',
+						showCancelButton: true,
+						confirmButtonColor: '#3085d6',
+						cancelButtonColor: '#d33',
+						confirmButtonText: 'Sim, Desejo Apagar!'
+					}).then((result) => {
+						if (result.isConfirmed) {
+							Excluir(id);
+							window.location.reload();									
+						}
+					});
+				}else{
+					Swal.fire(
+					'Esta agenda esta em uso!',
+					'Esta agenda esta em uso e não pode ser excluida!'
+					);
+				}
+			})
+
+			
+		}
+	
+
+		{% if session.success_notice %}
+			{# alert('{{ session.success_notice }}'); #}
+			Swal.fire({
+				position: 'top-end',
+				icon: 'success',
+				title: '{{ session.success_notice }}',
+				showConfirmButton: false,
+				timer: 1500
+			})
+		{% endif %}	
+				
+
+	</script>
+
+
+{% endblock %}

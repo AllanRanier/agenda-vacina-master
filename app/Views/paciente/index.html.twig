@@ -1,0 +1,133 @@
+{% extends 'templates/base.html.twig' %}
+
+{% block content %}
+
+    <div class="container-fluid">
+
+                    <!-- Page Heading -->
+                    <h1 class="h3 mb-2 text-gray-800">Paciente Cadastrado</h1>
+                    
+                    <!-- DataTales Example -->
+
+                    <div
+                        class="row justify-content-end card-header py-3 ">
+                        <a href="/paciente/novo" class="btn btn-primary btn-sm">Cadastrar Paciente</a>
+		            </div>
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Tabela de Paciente</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                                    <thead>
+                                        <tr>
+                                            <th>Nome</th>
+                                            <th>CPF</th>
+                                            <th>Data de Nascimento</th>
+                                            <th>Idade</th>
+                                            <th>Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for row in paciente %}
+                                            <tr>
+                                                <td>{{ row.nome }}</td>
+                                                <td>{{ row.cpf|mask_cpf_cnpj }}</td>
+                                                <td>{{ row.data_nascimento|date('d/m/Y')}}</td>												
+                                                <td>{{ row.idade }} anos</td>
+                                                <td >
+                                                    <a href="{{ base_url(baseRoute) }}/editar/{{ row.id }}" class="btn btn-info btn-circle btn-sm">
+                                                        <i class="fas fa-user-edit"></i>
+                                                    </a>
+                                                    <a class="btn btn-danger btn-circle btn-sm" onclick="AlertaExcluir({{ row.id }});">
+                                                        <i class="fas fa-trash"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <!-- /.container-fluid -->
+
+{% endblock %}
+
+{% block vendor %}
+	<script src="{{ base_url('/assets/js/inputmask/jquery.inputmask.min.js') }}"></script>
+{% endblock %}
+
+{% block script %}
+    <script src="{{ base_url('assets/vendor/datatables/jquery.dataTables.min.js')}}"></script>
+    <script src="{{ base_url('assets/vendor/datatables/dataTables.bootstrap4.min.js')}}"></script>
+
+    <script type="text/javascript">
+
+		function Excluir(id){
+			paramentros = {"id":id}
+			$.ajax({
+				data:paramentros,
+				url:'paciente/excluir/'+ id,
+				type:'POST',
+				beforeSend:function(){},
+				success:function(){
+					Swal.fire(
+					'Excluido!',
+					'Excluido Com Sucesso!.',
+					'success'
+					)
+				}
+			})
+		}
+
+		function AlertaExcluir(id){
+
+			parametros = {"id":id}
+			$.ajax({
+				data: parametros,
+				url: '{{ base_url('/agendamento/get-by-paciente') }}/' + id,
+				type: 'GET',
+				dataType: 'json',
+			}).done(function(result){
+
+				if(result == 0){
+					Swal.fire({
+						title: 'Deseja Excluir?',
+						text: "Você não poderá reverter isso!",
+						icon: 'warning',
+						showCancelButton: true,
+						confirmButtonColor: '#3085d6',
+						cancelButtonColor: '#d33',
+						confirmButtonText: 'Sim, Desejo Apagar!'
+					}).then((result) => {
+						if (result.isConfirmed) {
+							Excluir(id);
+							window.location.reload();
+							
+						}
+					})
+				}else{
+					Swal.fire(
+					'Este Paciente esta em uso!',
+					'Este Paciente esta em uso e não pode ser excluido!'
+					)
+				}
+			})
+		}
+
+    {% if session.success_notice %}
+		{# alert('{{ session.success_notice }}'); #}
+		Swal.fire({
+			position: 'top-end',
+			icon: 'success',
+			title: '{{ session.success_notice }}',
+			showConfirmButton: false,
+			timer: 1500
+		})
+	{% endif %}		
+	</script>
+{% endblock %}
